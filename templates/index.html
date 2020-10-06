@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>RKI Maps</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no"
+/>
+<link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico')}}">
+<script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
+<style>
+	body { margin: 0; padding: 0; }
+	#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+	mapboxgl.accessToken = {{ mapbox_access_token|tojson }};
+var map = new mapboxgl.Map({
+container: 'map', // container id
+style: 'mapbox://styles/mapbox/streets-v11', // style URL
+center: [12, 49], // starting position [lng, lat]
+zoom: 4 // starting zoom
+});
+
+map.on('load', function () {
+var layers = map.getStyle().layers;
+// Find the index of the first symbol layer in the map style
+var firstSymbolId;
+for (var i = 0; i < layers.length; i++) {
+if (layers[i].type === 'symbol') {
+firstSymbolId = layers[i].id;
+break;
+}
+}
+map.addSource('countries', {
+'type': 'geojson',
+'data':
+'https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson'
+});
+map.addLayer(
+{
+'id': 'countries-fill', //this is the name of our layer, which we will need later
+'type': 'fill',
+'source': 'countries',
+'layout': {},
+'paint': {
+    'fill-color': '#f08', //this is the color you want your tileset to have (I used a nice purple color)
+    'fill-outline-color': '#F2F2F2', //this helps us distinguish individual countries a bit better by giving them an outline
+    'fill-opacity': 0.4
+}
+// This is the important part of this example: the addLayer
+// method takes 2 arguments: the layer as an object, and a string
+// representing another layer's name. if the other layer
+// exists in the stylesheet already, the new layer will be positioned
+// right before that layer in the stack, making it possible to put
+// 'overlays' anywhere in the layer stack.
+// Insert the layer beneath the first symbol layer.
+},
+firstSymbolId
+);
+map.setFilter(
+    'countries-fill',
+    ['in', 'adm0_a3_is'].concat({{ countries|tojson}}),
+  ); // This line lets us filter by country codes.
+});
+
+
+</script>
+
+</body>
+</html>
